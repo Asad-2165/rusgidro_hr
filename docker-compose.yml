@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: rusgidro-hr-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/rusgidro_hr
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=your-secret-key-here
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./api:/app/api
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    image: nginx:alpine
+    container_name: rusgidro-hr-frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./static:/usr/share/nginx/html/static:ro
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:16-alpine
+    container_name: rusgidro-hr-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=rusgidro_hr
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: rusgidro-hr-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
